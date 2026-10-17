@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { LeaderboardEntry } from '@/lib/types';
 import { getTeamBySlug, getAllTeams, getRecentContributions } from '@/lib/db';
 import { getTopRankedTeams, getReignStatus } from '@/lib/redis';
 import TeamWarRoomClient from './TeamWarRoomClient';
@@ -57,12 +58,14 @@ export default async function TeamPage({ params, searchParams }: Props) {
     getReignStatus(),
   ]);
 
-  const entry = topTeams.find((e) => e.team.id === team.id) || {
+  const entry: LeaderboardEntry = topTeams.find((e) => e.team.id === team.id) || {
     rank: 99,
     team,
     score_cents: 0,
     score_dollars: 0,
     backers_count: 0,
+    mobilization_score: 0,
+    stars_count: 0,
     gap_to_next: 0,
     is_lead: false,
   };

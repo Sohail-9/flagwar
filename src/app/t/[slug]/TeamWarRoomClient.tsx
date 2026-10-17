@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Shield,
   Flame,
+  Award,
 } from 'lucide-react';
 import { Team, LeaderboardEntry, Payment } from '@/lib/types';
 import ContributionModal from '@/components/ContributionModal';
@@ -142,15 +143,22 @@ export default function TeamWarRoomClient({
                 </div>
 
                 <div className="text-center bg-gray-950/80 border border-gray-800 px-5 py-3 rounded-2xl">
-                  <div className="text-[11px] font-bold text-gray-400 uppercase">Treasury Backed</div>
+                  <div className="text-[11px] font-bold text-gray-400 uppercase">Treasury</div>
                   <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono mt-0.5">
                     ${entry.score_dollars.toLocaleString()}
+                  </div>
+                </div>
+
+                <div className="text-center bg-gray-950/80 border border-gray-800 px-5 py-3 rounded-2xl">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase">People Power</div>
+                  <div className="text-3xl sm:text-4xl font-black text-cyan-400 font-mono mt-0.5">
+                    {(entry.mobilization_score || Math.round(entry.backers_count * Math.sqrt(Math.max(1, entry.score_dollars)))).toLocaleString()}
                   </div>
                 </div>
               </div>
 
               <div className="text-xs text-gray-400 font-medium">
-                {entry.backers_count} verified territory backers
+                {entry.backers_count} verified citizens • People Power = Citizens × √Treasury
               </div>
             </div>
           </div>
@@ -262,6 +270,25 @@ export default function TeamWarRoomClient({
                   <span>Telegram</span>
                 </a>
               </div>
+            </div>
+
+            {/* Citizen Pass Teaser Card */}
+            <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 border border-amber-500/30 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5" />
+                  Official Citizen Pass
+                </span>
+                <p className="text-xs text-white font-bold mt-0.5">
+                  Mint your shareable {team.name} Defender Pass ($1+)
+                </p>
+              </div>
+              <button
+                onClick={() => setIsBackModalOpen(true)}
+                className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-gray-950 font-black text-xs hover:from-amber-400 hover:to-orange-400 transition-all shadow-md"
+              >
+                Mint Pass
+              </button>
             </div>
 
             {/* OpenGraph Preview Mini Card */}
