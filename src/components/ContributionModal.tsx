@@ -5,6 +5,8 @@ import confetti from 'canvas-confetti';
 import { X, Sparkles, CreditCard, QrCode, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Team } from '@/lib/types';
 
+import CitizenPassCard from './CitizenPassCard';
+
 interface ContributionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -158,26 +160,21 @@ export default function ContributionModal({
         </button>
 
         {successInfo ? (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 mb-4 animate-bounce">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <div className="text-4xl mb-2">{successInfo.team.flag}</div>
-            <h3 className="text-2xl font-black text-white">
-              Backed {successInfo.team.name}!
-            </h3>
-            <p className="text-emerald-400 font-mono font-bold text-lg mt-1">
-              +${successInfo.amount}.00 Added to Treasury
-            </p>
-            <p className="text-gray-400 text-xs mt-2 max-w-sm mx-auto">
-              Your points have been minted to the permanent Postgres ledger and live ranked on the Redis board.
-            </p>
-            <div className="mt-6 flex gap-3 justify-center">
+          <div className="py-2">
+            <CitizenPassCard
+              contributorName={contributorName}
+              handle={handle}
+              team={successInfo.team}
+              amountDollars={successInfo.amount}
+              message={message}
+              citizenNumber={Math.floor(Math.random() * 850) + 42}
+            />
+            <div className="mt-4 text-center">
               <button
                 onClick={resetModal}
-                className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-gray-950 font-bold text-xs hover:from-amber-400 hover:to-orange-400 transition-all"
+                className="py-2 px-6 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs transition-colors"
               >
-                Return to Battlefield
+                ← Return to Battlefield
               </button>
             </div>
           </div>
@@ -385,6 +382,11 @@ export default function ContributionModal({
                 </>
               )}
             </button>
+
+            {/* Legal / Payment Gateway Protection Disclaimer */}
+            <p className="text-[10px] text-gray-500 text-center leading-relaxed mt-2">
+              🛡️ <strong>Digital Vanity Collectible</strong>: Grants an official Citizen Pass badge & permanent Postgres ledger hall-of-fame record. Non-refundable digital entertainment purchase. Zero prize pools or financial stakes.
+            </p>
           </form>
         )}
       </div>
