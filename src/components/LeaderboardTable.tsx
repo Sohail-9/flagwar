@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Search, ChevronRight, Swords, Sparkles, Filter } from 'lucide-react';
+import { Search, ChevronRight, Swords, Sparkles, Filter, Users, DollarSign, Info } from 'lucide-react';
 import { LeaderboardEntry, Team } from '@/lib/types';
 
 interface LeaderboardTableProps {
@@ -10,6 +10,8 @@ interface LeaderboardTableProps {
   allTeams: Team[];
   onBackTeam: (team: Team) => void;
   highlightedTeamId?: string | null;
+  rankingMode?: 'treasury' | 'mobilization';
+  onToggleRankingMode?: (mode: 'treasury' | 'mobilization') => void;
 }
 
 export default function LeaderboardTable({
@@ -17,12 +19,19 @@ export default function LeaderboardTable({
   allTeams,
   onBackTeam,
   highlightedTeamId,
+  rankingMode = 'treasury',
+  onToggleRankingMode,
 }: LeaderboardTableProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'country' | 'state' | 'city'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Top score for progress bar calculations
-  const maxScore = entries.length > 0 ? Math.max(1, entries[0].score_dollars) : 100;
+  const maxScore =
+    entries.length > 0
+      ? rankingMode === 'mobilization'
+        ? Math.max(1, entries[0].mobilization_score)
+        : Math.max(1, entries[0].score_dollars)
+      : 100;
 
   // Filter entries
   const filtered = entries.filter((item) => {
@@ -37,13 +46,58 @@ export default function LeaderboardTable({
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-8">
+      {/* Ranking Mode Toggle: Anti-Whale Mobilization vs Treasury */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gray-900/60 border border-gray-800 mb-6">
+        <div>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs uppercase font-extrabold tracking-wider text-amber-400">
+              Leaderboard Engine
+            </span>
+            <span className="text-[10px] bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30 font-semibold">
+              {rankingMode === 'mobilization' ? '🛡️ Anti-Whale Active' : '💰 Capital Weight'}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1 max-w-md">
+            {rankingMode === 'mobilization'
+              ? "Ranked by People's Mobilization Power (Backers × √Treasury). 1,000 citizens beat 1 billionaire!"
+              : 'Ranked by total treasury dollars collected in the Postgres ledger.'}
+          </p>
+        </div>
+
+        <div className="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800">
+          <button
+            onClick={() => onToggleRankingMode?.('treasury')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              rankingMode === 'treasury'
+                ? 'bg-amber-500 text-gray-950 shadow-md shadow-amber-500/20'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>Treasury ($)</span>
+          </button>
+
+          <button
+            onClick={() => onToggleRankingMode?.('mobilization')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              rankingMode === 'mobilization'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-gray-950 shadow-md shadow-emerald-500/20'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>People Power (Anti-Whale)</span>
+          </button>
+        </div>
+      </div>
+
       {/* Controls: Filter Tabs & Search */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
         {/* Category Pills */}
-        <div className="flex items-center space-x-1 bg-gray-900/90 p-1 rounded-xl border border-gray-800">
+        <div className="flex items-center space-x-1 bg-gray-900/90 p-1 rounded-xl border border-gray-800 overflow-x-auto">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeFilter === 'all'
                 ? 'bg-amber-500 text-gray-950 shadow-sm'
                 : 'text-gray-400 hover:text-white'
@@ -53,7 +107,7 @@ export default function LeaderboardTable({
           </button>
           <button
             onClick={() => setActiveFilter('country')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeFilter === 'country'
                 ? 'bg-amber-500 text-gray-950 shadow-sm'
                 : 'text-gray-400 hover:text-white'
@@ -63,7 +117,7 @@ export default function LeaderboardTable({
           </button>
           <button
             onClick={() => setActiveFilter('state')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeFilter === 'state'
                 ? 'bg-amber-500 text-gray-950 shadow-sm'
                 : 'text-gray-400 hover:text-white'
@@ -73,7 +127,7 @@ export default function LeaderboardTable({
           </button>
           <button
             onClick={() => setActiveFilter('city')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
               activeFilter === 'city'
                 ? 'bg-amber-500 text-gray-950 shadow-sm'
                 : 'text-gray-400 hover:text-white'
@@ -109,8 +163,12 @@ export default function LeaderboardTable({
         <div className="grid grid-cols-12 gap-2 px-5 py-3.5 bg-gray-900/80 border-b border-gray-800 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
           <div className="col-span-1 text-center">Rank</div>
           <div className="col-span-5 sm:col-span-4">Territory</div>
-          <div className="hidden sm:block col-span-3">War Progress</div>
-          <div className="col-span-3 sm:col-span-2 text-right">Treasury</div>
+          <div className="hidden sm:block col-span-3">
+            {rankingMode === 'mobilization' ? 'Mobilization Power' : 'Treasury Progress'}
+          </div>
+          <div className="col-span-3 sm:col-span-2 text-right">
+            {rankingMode === 'mobilization' ? 'Power Pts' : 'Treasury'}
+          </div>
           <div className="col-span-3 sm:col-span-2 text-right">Back</div>
         </div>
 
@@ -121,9 +179,8 @@ export default function LeaderboardTable({
             </div>
           ) : (
             filtered.map((item) => {
-              const percent = Math.min(100, Math.round((item.score_dollars / maxScore) * 100));
-              const isTop3 = item.rank <= 3;
-
+              const currentScore = rankingMode === 'mobilization' ? item.mobilization_score : item.score_dollars;
+              const percent = Math.min(100, Math.round((currentScore / maxScore) * 100));
               const isHighlighted = item.team.id === highlightedTeamId;
 
               return (
@@ -159,12 +216,17 @@ export default function LeaderboardTable({
                         className="font-bold text-sm text-white hover:text-amber-400 transition-colors flex items-center space-x-1"
                       >
                         <span className="truncate">{item.team.name}</span>
+                        {item.stars_count > 0 && (
+                          <span className="text-xs shrink-0" title={`${item.stars_count} Throne Defence Stars`}>
+                            {'⭐'.repeat(item.stars_count)}
+                          </span>
+                        )}
                         <ChevronRight className="w-3 h-3 text-gray-600 hover:text-amber-400 shrink-0" />
                       </Link>
                       <div className="flex items-center space-x-2 text-[10px] text-gray-400">
                         <span className="uppercase font-semibold">{item.team.type}</span>
                         <span>•</span>
-                        <span>{item.backers_count} backers</span>
+                        <span className="text-amber-300 font-semibold">{item.backers_count} citizens</span>
                       </div>
                     </div>
                   </div>
@@ -174,7 +236,9 @@ export default function LeaderboardTable({
                     <div className="w-full bg-gray-950 rounded-full h-2 overflow-hidden border border-gray-800">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
-                          item.rank === 1
+                          rankingMode === 'mobilization'
+                            ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 shadow-sm shadow-emerald-500/50'
+                            : item.rank === 1
                             ? 'bg-gradient-to-r from-amber-400 to-yellow-500 shadow-sm shadow-amber-500/50'
                             : 'bg-gradient-to-r from-emerald-500 to-teal-400'
                         }`}
@@ -183,7 +247,7 @@ export default function LeaderboardTable({
                     </div>
                     {item.gap_to_next && item.gap_to_next > 0 ? (
                       <span className="text-[10px] text-gray-500 mt-1 block">
-                        +${item.gap_to_next} to advance
+                        +{item.gap_to_next} {rankingMode === 'mobilization' ? 'pts' : '$'} to advance
                       </span>
                     ) : (
                       <span className="text-[10px] text-amber-400 font-semibold mt-1 block">
@@ -192,14 +256,27 @@ export default function LeaderboardTable({
                     )}
                   </div>
 
-                  {/* Treasury Score */}
+                  {/* Score Column */}
                   <div className="col-span-3 sm:col-span-2 text-right">
-                    <div className="font-extrabold text-sm sm:text-base font-mono text-emerald-400">
-                      ${item.score_dollars.toLocaleString()}
-                    </div>
-                    <div className="text-[10px] text-gray-500">
-                      {(item.score_cents % 100).toString().padStart(2, '0')}¢
-                    </div>
+                    {rankingMode === 'mobilization' ? (
+                      <div>
+                        <div className="font-extrabold text-sm sm:text-base font-mono text-cyan-400">
+                          {item.mobilization_score.toLocaleString()} pts
+                        </div>
+                        <div className="text-[10px] text-gray-500">
+                          ${item.score_dollars.toLocaleString()} treasury
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="font-extrabold text-sm sm:text-base font-mono text-emerald-400">
+                          ${item.score_dollars.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-cyan-500 font-mono">
+                          {item.mobilization_score} power
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Back Action */}

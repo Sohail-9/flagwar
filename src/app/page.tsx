@@ -47,11 +47,16 @@ export default function HomePage() {
   // Toast / Live takeover banner
   const [takeoverAlert, setTakeoverAlert] = useState<{ newLead: string; prevLead: string } | null>(null);
 
+  const [rankingMode, setRankingMode] = useState<'treasury' | 'mobilization'>('treasury');
+  const rankingModeRef = useRef(rankingMode);
+  rankingModeRef.current = rankingMode;
+
   // Fetch initial board state
-  const loadInitialData = async () => {
+  const loadInitialData = async (mode?: 'treasury' | 'mobilization') => {
+    const activeMode = mode || rankingModeRef.current;
     try {
       const [boardRes, teamsRes] = await Promise.all([
-        fetch('/api/board'),
+        fetch(`/api/board?mode=${activeMode}`),
         fetch('/api/teams'),
       ]);
 
@@ -129,7 +134,7 @@ export default function HomePage() {
             ]);
 
             // Re-fetch fresh ranked board to guarantee exact Redis order
-            fetch('/api/board')
+            fetch(`/api/board?mode=${rankingModeRef.current}`)
               .then((res) => res.json())
               .then((resData) => {
                 if (resData.success) {
@@ -320,6 +325,11 @@ export default function HomePage() {
               allTeams={allTeams}
               onBackTeam={(team) => handleOpenBackModal(team)}
               highlightedTeamId={highlightedTeamId}
+              rankingMode={rankingMode}
+              onToggleRankingMode={(newMode) => {
+                setRankingMode(newMode);
+                loadInitialData(newMode);
+              }}
             />
           </div>
         )}
