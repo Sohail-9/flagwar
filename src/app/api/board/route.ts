@@ -1,13 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getTopRankedTeams, getReignStatus } from '@/lib/redis';
 import { getRecentContributions, getSeasonState } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get('mode') === 'mobilization' ? 'mobilization' : 'treasury';
+
     const [board, reign, recentPayments, season] = await Promise.all([
-      getTopRankedTeams(50),
+      getTopRankedTeams(50, mode),
       getReignStatus(),
       getRecentContributions(20),
       getSeasonState(),

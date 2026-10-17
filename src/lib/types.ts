@@ -40,8 +40,23 @@ export interface LeaderboardEntry {
   score_cents: number;
   score_dollars: number;
   backers_count: number;
-  gap_to_next?: number; // Cents to catch up to rank - 1
+  mobilization_score: number; // Backers * sqrt(Dollars)
+  stars_count: number;
+  gap_to_next?: number;
   is_lead?: boolean;
+}
+
+export interface CitizenPass {
+  id: string;
+  citizen_number: number;
+  contributor_name: string;
+  handle?: string;
+  team: Team;
+  rank_tier: 'Commander' | 'Centurion' | 'Guardian' | 'Defender';
+  amount_dollars: number;
+  message?: string;
+  created_at: string;
+  referral_url: string;
 }
 
 export interface ReignState {

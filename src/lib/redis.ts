@@ -119,7 +119,10 @@ export async function zincrby(teamId: string, amountCents: number): Promise<numb
 /**
  * Get top ranked teams (ZREVRANGE with scores)
  */
-export async function getTopRankedTeams(limit = 50): Promise<LeaderboardEntry[]> {
+export async function getTopRankedTeams(
+  limit = 50,
+  rankingMode: 'treasury' | 'mobilization' = 'treasury'
+): Promise<LeaderboardEntry[]> {
   const allTeams = await getAllTeams();
   const teamMap = new Map(allTeams.map((t) => [t.id, t]));
   const ledgerScores = await computeScoresFromLedger();
@@ -129,7 +132,6 @@ export async function getTopRankedTeams(limit = 50): Promise<LeaderboardEntry[]>
   if (upstashClient) {
     try {
       const redisResult = await upstashClient.zrange(REDIS_KEY, 0, limit - 1, { rev: true, withScores: true });
-      // upstash returns array of strings or member-score pairs
       if (Array.isArray(redisResult)) {
         for (let i = 0; i < redisResult.length; i += 2) {
           if (typeof redisResult[i] === 'string' && redisResult[i + 1] !== undefined) {
@@ -153,7 +155,7 @@ export async function getTopRankedTeams(limit = 50): Promise<LeaderboardEntry[]>
   }
 
   // Build full leaderboard entries
-  const entries: LeaderboardEntry[] = [];
+  let entries: LeaderboardEntry[] = [];
   for (let i = 0; i < rankedMembers.length; i++) {
     const item = rankedMembers[i];
     const team = teamMap.get(item.member);
@@ -161,18 +163,46 @@ export async function getTopRankedTeams(limit = 50): Promise<LeaderboardEntry[]>
 
     const ledgerInfo = ledgerScores.get(item.member) || { cents: item.score, backers: 1 };
     const scoreCents = item.score;
-    const prevScore = i > 0 ? rankedMembers[i - 1].score : scoreCents;
-    const gap = prevScore - scoreCents;
+    const scoreDollars = Math.floor(scoreCents / 100);
+
+    // "People's Army" Anti-Whale Mobilization Formula: Backers * sqrt(Dollars)
+    const mobilizationScore = Math.round(ledgerInfo.backers * Math.sqrt(Math.max(1, scoreDollars)));
+
+    // Stars earned from territory defence
+    const starsCount = i === 0 ? 3 : i === 1 ? 2 : i === 2 ? 1 : 0;
 
     entries.push({
       rank: i + 1,
       team,
       score_cents: scoreCents,
-      score_dollars: Math.floor(scoreCents / 100),
+      score_dollars: scoreDollars,
       backers_count: ledgerInfo.backers,
-      gap_to_next: gap > 0 ? Math.ceil(gap / 100) : 0,
+      mobilization_score: mobilizationScore,
+      stars_count: starsCount,
+      gap_to_next: 0,
       is_lead: i === 0,
     });
+  }
+
+  // If mobilization ranking mode is chosen (Anti-Whale People's Power)
+  if (rankingMode === 'mobilization') {
+    entries.sort((a, b) => b.mobilization_score - a.mobilization_score);
+    entries = entries.map((e, idx) => ({
+      ...e,
+      rank: idx + 1,
+      is_lead: idx === 0,
+    }));
+  }
+
+  // Recalculate gap to next rank
+  for (let i = 0; i < entries.length; i++) {
+    if (i > 0) {
+      const prev = entries[i - 1];
+      const gap = rankingMode === 'mobilization'
+        ? prev.mobilization_score - entries[i].mobilization_score
+        : prev.score_dollars - entries[i].score_dollars;
+      entries[i].gap_to_next = Math.max(0, gap);
+    }
   }
 
   return entries;
